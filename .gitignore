@@ -9,3 +9,4 @@ wheels/
 # Virtual environments
 .venv
 models/baseline_cnn.keras
+.DS_Store

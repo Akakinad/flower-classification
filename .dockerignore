@@ -1,0 +1,33 @@
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Jupyter notebooks (not needed in production)
+notebooks/
+
+# Development files
+.git/
+.gitignore
+README.md
+docs/
+
+# Test files
+test_*.jpg
+
+# macOS
+.DS_Store
+
+# Data directory (model downloads this automatically)
+data/
+
+# Baseline model (we only need the transfer learning model)
+models/baseline_cnn.keras

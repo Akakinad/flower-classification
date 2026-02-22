@@ -116,7 +116,11 @@ flower-classification/
 │   └── baseline_cnn.keras                   # Baseline experiment (128 MB)
 ├── docs/
 │   └── images/                         # Visualizations for README
-├── app/                                # Streamlit deployment (coming soon)
+├── app/                                # FastAPI REST API
+│   ├── main.py                        # API endpoints & logic
+│   └── flower_names.py                # Flower species names
+├── Dockerfile                          # Docker container configuration
+├── .dockerignore                       # Docker build exclusions
 ├── pyproject.toml                      # Project dependencies (uv)
 ├── uv.lock                             # Locked dependencies
 └── README.md                           # This file
@@ -197,50 +201,237 @@ Architecture:
 
 ### **Prerequisites**
 - Python 3.11+
-- [uv](https://github.com/astral-sh/uv) (modern package manager)
+- **Package Manager:** This project uses [uv](https://github.com/astral-sh/uv) (modern, fast alternative to pip)
 
-### **Installation**
+---
+
+### **Installation (Recommended: uv)**
+
+**This project uses `uv` for dependency management** (notice `pyproject.toml` and `uv.lock` files).
 ```bash
-# Clone repository
+# 1. Clone repository
 git clone https://github.com/Akakinad/flower-classification.git
 cd flower-classification
 
-# Install uv (if not already installed)
+# 2. Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Create virtual environment and install dependencies
+# 3. Create virtual environment and install all dependencies
 uv venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-uv sync
+uv sync  # Installs from pyproject.toml
 
-# Run Jupyter notebooks
+# 4. Verify installation
+python -c "import tensorflow as tf; print(f'TensorFlow {tf.__version__} installed')"
+
+# 5. Run Jupyter notebooks
 jupyter notebook
 ```
 
+**Why `uv`?** 10-100x faster than pip, automatic dependency resolution, and modern Python packaging.
+
+---
+
+### **Alternative: Traditional pip (if you can't use uv)**
+```bash
+# 1. Clone and navigate
+git clone https://github.com/Akakinad/flower-classification.git
+cd flower-classification
+
+# 2. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# 3. Install dependencies from pyproject.toml
+pip install .
+# OR manually install key packages:
+pip install tensorflow tensorflow-datasets matplotlib seaborn scikit-learn jupyter
+
+# 4. Run notebooks
+jupyter notebook
+```
+
+**Note:** Using pip may have slightly different dependency versions than the locked `uv.lock` file.
+
+---
+
 ### **Dataset**
-The Oxford Flowers 102 dataset is automatically downloaded via TensorFlow Datasets on first run (~330 MB).
+The Oxford Flowers 102 dataset (~330 MB) is automatically downloaded via TensorFlow Datasets on first notebook run.
+
+---
+
+## 🚀 API Usage
+
+### **Running Locally**
+
+The API is built with FastAPI and can be run directly or via Docker.
+
+#### **Method 1: Direct Python (Development)**
+```bash
+# Activate virtual environment
+source .venv/bin/activate  # or: .venv\Scripts\activate on Windows
+
+# Run the API
+uvicorn app.main:app --reload
+
+# Access at: http://localhost:8000
+# Interactive docs: http://localhost:8000/docs
+```
+
+#### **Method 2: Docker (Production)**
+```bash
+# Build Docker image
+docker build -t flower-classifier-api .
+
+# Run container
+docker run -d -p 8000:8000 --name flower-api flower-classifier-api
+
+# View logs
+docker logs flower-api
+
+# Stop container
+docker stop flower-api
+
+# Remove container
+docker rm flower-api
+```
+
+---
+
+### **API Endpoints**
+
+#### **1. Health Check**
+```bash
+GET http://localhost:8000/
+
+Response:
+{
+  "message": "Flower Classification API is running!",
+  "model": "MobileNetV2",
+  "accuracy": "53.93%",
+  "classes": 102
+}
+```
+
+#### **2. Predict Flower Species**
+```bash
+POST http://localhost:8000/predict
+Content-Type: multipart/form-data
+
+Body: file (image/jpeg, image/png, etc.)
+```
+
+**Example using curl:**
+```bash
+curl -X POST "http://localhost:8000/predict" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@path/to/flower.jpg"
+```
+
+**Example Response:**
+```json
+{
+  "success": true,
+  "predictions": [
+    {
+      "class_id": 76,
+      "flower_name": "passion flower",
+      "confidence": 16.70
+    },
+    {
+      "class_id": 99,
+      "flower_name": "blanket flower",
+      "confidence": 6.29
+    },
+    {
+      "class_id": 70,
+      "flower_name": "gazania",
+      "confidence": 6.20
+    }
+  ],
+  "filename": "flower.jpg"
+}
+```
+
+**Interactive API Documentation:**
+- Visit `http://localhost:8000/docs` for Swagger UI
+- Test endpoints directly in browser
+- View request/response schemas
+
+---
+
+## 🐳 Docker Deployment
+
+### **Building the Image**
+
+The project includes a production-ready Dockerfile:
+```dockerfile
+# Uses Python 3.11-slim base
+# Installs uv for dependency management
+# Copies only necessary files (see .dockerignore)
+# Exposes port 8000
+# Runs uvicorn server
+```
+
+**Build command:**
+```bash
+docker build -t flower-classifier-api .
+```
+
+**Image size:** ~500 MB (includes model + dependencies)
+
+---
+
+### **Deployment Options**
+
+#### **1. AWS (Elastic Container Service)**
+```bash
+# Tag for ECR
+docker tag flower-classifier-api:latest <aws-account>.dkr.ecr.<region>.amazonaws.com/flower-api:latest
+
+# Push to ECR
+docker push <aws-account>.dkr.ecr.<region>.amazonaws.com/flower-api:latest
+
+# Deploy to ECS/Fargate
+```
+
+#### **2. Google Cloud Run**
+```bash
+# Tag for GCR
+docker tag flower-classifier-api gcr.io/<project-id>/flower-api
+
+# Push to GCR
+docker push gcr.io/<project-id>/flower-api
+
+# Deploy
+gcloud run deploy flower-api --image gcr.io/<project-id>/flower-api --platform managed
+```
+
+#### **3. Render.com (Easiest)**
+- Connect GitHub repository
+- Select "Web Service"
+- Render auto-detects Dockerfile
+- Deploys automatically on push
+
+#### **4. Railway.app**
+- Connect GitHub repository
+- Railway builds and deploys Docker image
+- Provides free tier for testing
 
 ---
 
 ## 🔮 Future Enhancements
 
-- [ ] **Streamlit web app** for real-time predictions
-- [ ] **Model optimization** with EfficientNet or Vision Transformers
+- [ ] **HTML/React frontend** for easier image uploads
+- [ ] **Model optimization** with TensorFlow Lite for mobile
 - [ ] **Grad-CAM visualizations** to explain predictions
-- [ ] **Mobile deployment** with TensorFlow Lite
-- [ ] **API development** with FastAPI
-- [ ] **Docker containerization**
-- [ ] **Class balancing** techniques for underrepresented species
-
----
-
-## 📚 Key Learnings
-
-1. **Transfer learning is essential** with limited data - achieved 80x improvement over baseline
-2. **Fine-tuning can backfire with small datasets** - attempted optimization degraded performance from 55% → 45% due to overfitting; knowing when NOT to tune is as important as knowing how to tune
-3. **Data augmentation helps** but can't replace having more training examples
-4. **Model size matters** - MobileNetV2 (11 MB) is deployment-ready, unlike larger architectures
-5. **Class imbalance impacts performance** - some species need more training data
+- [ ] **Batch prediction endpoint** for multiple images
+- [ ] **Model versioning** with MLflow
+- [ ] **Monitoring** with Prometheus/Grafana
+- [ ] **CI/CD pipeline** with GitHub Actions
+- [ ] **Class rebalancing** techniques for underrepresented species
+- [x] **REST API with FastAPI** ✅ (Complete)
+- [x] **Docker containerization** ✅ (Complete)
 
 ---
 
