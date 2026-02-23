@@ -4,8 +4,12 @@
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.20-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Accuracy](https://img.shields.io/badge/Test_Accuracy-53.93%25-success)
+![Live Demo](https://img.shields.io/badge/Live_Demo-Online-brightgreen?style=flat&logo=render)
 
 > **Automated flower species classification using transfer learning and deep convolutional neural networks**
+
+🌐 **[Live API Demo](https://flower-classification-gcf4.onrender.com/docs)** | 📁 **[GitHub Repository](https://github.com/Akakinad/flower-classification)**
+
 
 A production-ready deep learning system that classifies 102 flower species with 53.93% accuracy using transfer learning with MobileNetV2. Built as a portfolio project demonstrating end-to-end ML engineering skills.
 
@@ -379,6 +383,28 @@ docker build -t flower-classifier-api .
 ```
 
 **Image size:** ~500 MB (includes model + dependencies)
+
+---
+
+### **Live Deployment**
+
+**This project is currently deployed and running at:**
+
+🌐 **[https://flower-classification-gcf4.onrender.com](https://flower-classification-gcf4.onrender.com)**
+
+**Interactive API Documentation:**
+📖 **[https://flower-classification-gcf4.onrender.com/docs](https://flower-classification-gcf4.onrender.com/docs)**
+
+**Try it now:**
+1. Visit the `/docs` URL
+2. Click on `POST /predict`
+3. Upload a flower image
+4. Get predictions with flower names and confidence scores
+
+**Deployment Details:**
+- Platform: Render.com
+- Auto-deploys: from `main` branch
+- Cold start: ~50 seconds after 15 minutes of inactivity
 
 ---
 
